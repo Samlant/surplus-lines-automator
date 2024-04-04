@@ -6,32 +6,69 @@ import threading
 from tkinterdnd2 import DND_FILES, TkinterDnD
 
 from themes.applicator import create_style
+from .templates.new import NewRegistrations
+from .templates.registrations import make_registration_widgets
 
 
 class Presenter(Protocol):
-    def process_SL_doc(self, event):
-        ...
-    
-    def save_output_dir(self, save_path: str):
-        ...
+    def process_SL_doc(self, event): ...
+
+    def save_output_dir(self, save_path: str): ...
+
+    def update_dropdown_options(self, start: bool = False): ...
 
 
 log = logging.getLogger(__name__)
 
-
-    
 
 class SurplusLinesView:
     def __init__(self, view_palette):
         self.root: TkinterDnD = TkinterDnD.Tk()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.palette = view_palette
-        self.style  = None
+        self.style = None
         self.presenter: Presenter = None
         self.producer_templates_list: list[str] = []
-        self._producer_template = StringVar(master=self.root, name="producer_template")
-        self._producer_name = StringVar(master=self.root, name="producer_name")
-        self._producer_address = StringVar(master=self.root, name="producer_address")
+        self._producer_template = StringVar(
+            master=self.root,
+            name="producer_template",
+        )
+        self._template_name = StringVar(
+            master=self.root,
+            name="template_name",
+        )
+        self._producer_name = StringVar(
+            master=self.root,
+            name="producer_name",
+        )
+        self._producer_address = StringVar(
+            master=self.root,
+            name="producer_address",
+        )
+        self._city_st_zip = StringVar(
+            master=self.root,
+            name="city_st_zip",
+        )
+
+    @property
+    def templates(self) -> dict[str, str]:
+        return {
+            "template_name": self.template_name,
+            "pname": self.producer_name,
+            "paddress": self.producer_address,
+            "city_st_zip": self.city_st_zip,
+        }
+
+    @templates.setter
+    def templates(self, save_data: dict[str, str | bool]) -> None:
+        for attr_name, value in save_data.items():
+            setattr(self, attr_name, value)
+
+    @templates.deleter
+    def templates(self):
+        self.template_name = ""
+        self.producer_name = ""
+        self.producer_address = ""
 
     @property
     def producer_template(self) -> str:
@@ -40,6 +77,14 @@ class SurplusLinesView:
     @producer_template.setter
     def producer_template(self, new_template: str):
         self._producer_template.set(new_template)
+
+    @property
+    def template_name(self) -> str:
+        return self._template_name.get()
+
+    @template_name.setter
+    def template_name(self, new_template: str):
+        self._template_name.set(new_template)
 
     @property
     def producer_name(self) -> str:
@@ -56,6 +101,14 @@ class SurplusLinesView:
     @producer_address.setter
     def producer_address(self, new_address: str):
         self._producer_address.set(new_address)
+
+    @property
+    def city_st_zip(self) -> str:
+        return self._city_st_zip.get()
+
+    @city_st_zip.setter
+    def city_st_zip(self, new_address: str):
+        self._city_st_zip.set(new_address)
 
     @property
     def output_dir(self) -> str:
@@ -93,15 +146,21 @@ class SurplusLinesView:
         self.style = create_style(self.root, self.palette)
         self._assign_window_traits()
         self.producer_templates_list = template_values
+        self.producer_template = "Choose a template"
         self._create_widgets()
         if output_dir:
             self.output_dir = output_dir
         self.root.withdraw()
         self.root.mainloop()
-                
-    def on_close(self):
-        print('hiding window')
-        self.root.withdraw()
+
+    def on_close(self, window=None):
+        if window:
+            self.root.attributes("-topmost", True)
+            window.destroy()
+            self.presenter.update_dropdown_options()
+        else:
+            print("hiding window")
+            self.root.withdraw()
 
     def _assign_window_traits(self):
         self.root.geometry("730x290")
@@ -180,10 +239,27 @@ class SurplusLinesView:
             text="Producer Template to use:",
             font=("Times New Roman", 12, "bold"),
         ).pack(
-            side="left", pady=1, padx=2,
+            side="left",
+            pady=1,
+            padx=2,
         )
-        self.producer_dropdown = ttk.OptionMenu(master=middle2, variable=self._producer_template, *self.producer_templates_list,)
-        self.producer_dropdown.pack(fill="x", side="top", pady=1, padx=2)
+        self.producer_dropdown = ttk.OptionMenu(
+            middle2,
+            self._producer_template,
+            *self.producer_templates_list,
+        )
+        self.producer_dropdown.pack(
+            fill="x",
+            side="left",
+            pady=1,
+            padx=2,
+            ipadx=100,
+        )
+        ttk.Button(
+            master=middle2,
+            command=self.spawn_options_window,
+            text="Edit Templates",
+        ).pack(fill="x", side="right")
         #### END SECTION ####
         ttk.Label(
             middle3,
@@ -263,94 +339,26 @@ class SurplusLinesView:
                 self.presenter.save_output_dir(save_path=_dir)
 
     def process_file(self, event):
-        t = threading.Thread(target=lambda: self.presenter.process_SL_doc(event=event), daemon=True)
+        t = threading.Thread(
+            target=lambda: self.presenter.process_SL_doc(
+                event=event, producer_template=self.producer_template
+            ),
+            daemon=True,
+        )
         t.start()
         self.root.withdraw()
 
-    def spawn_options_window(self):
+    def spawn_options_window(self, event=None):
         new_window = Toplevel(master=self.root)
-        # func returns top section
-        top = CurrentRegistrations(presenter=self.presenter, parent=new_window, text="Current Templates")
-        # func returns bottom section
-        bottom = NewRegistrations(presenter=self.presenter, parent=new_window, text="Register New Template")
-
-class NewRegistrations(ttk.LabelFrame):
-    def __init__(
-        self,
-        presenter: Presenter,
-        parent,
-        text: str,
-    ):
-        super().__init__(master=parent, text=text)
-
-        ttk.Label(
-            self,
-            text="Enter a name for the template,  then the name & address of the producer.",
-        ).grid(column=0, row=0, pady=3, columnspan=5)
-        ttk.Label(
-            self,
-            text="Template Name:",
-        ).grid(column=0, row=3, padx=(3, 0))
-        self.form_name_entry = ttk.Entry(
-            master=self,
-            name="form_name",
-            textvariable=parent._template_name,
-            width=35,
+        self.root.attributes("-topmost", False)
+        new_window.attributes("-topmost", True)
+        new_window.attributes("-alpha", 0.95)
+        new_window.protocol("WM_DELETE_WINDOW", lambda: self.on_close(new_window))
+        frame = ttk.Frame(master=new_window, style="TFrame")
+        frame.pack(fill="both")
+        make_registration_widgets(
+            view=self,
+            presenter=self.presenter,
+            parent=frame,
         )
-        self.form_name_entry.grid(
-            column=1,
-            row=3,
-            sticky="ew",
-            ipady=5,
-            pady=1,
-        )
-
-        ttk.Label(
-            self,
-            text="Name:",
-        ).grid(column=0, row=4, padx=(3, 0))
-        self.fname_entry = ttk.Entry(
-            master=self,
-            name="fname",
-            textvariable=parent._producer_name,
-            width=35,
-        )
-        self.fname_entry.grid(
-            column=1,
-            row=4,
-            sticky="ew",
-            ipady=5,
-            pady=1,
-        )
-
-        ttk.Label(
-            self,
-            text="Address:",
-        ).grid(column=0, row=5, padx=(3, 0))
-        self.lname_entry = ttk.Entry(
-            master=self,
-            name="lname",
-            textvariable=parent._producer_address,
-            width=35,
-        )
-        self.lname_entry.grid(
-            column=1,
-            row=5,
-            sticky="ew",
-            ipady=5,
-            pady=5,
-        )
-
-        ttk.Button(
-            master=self,
-            text="Register",
-            command=presenter.add_qf_registration,
-        ).grid(
-            rowspan=5,
-            column=4,
-            row=3,
-            sticky="ew",
-            padx=5,
-            pady=10,
-            ipady=40,
-        )
+        self.presenter.btn_revert_register_tab()

@@ -54,7 +54,7 @@ class Automator:
             return None
         else:
             return str(output_dir)
-    
+
     @output_dir.setter
     def output_dir(self, new_dir: str) -> bool:
         config = open_config()
@@ -64,11 +64,11 @@ class Automator:
             return True
         else:
             return False
-        
+
     @property
     def user_doc_path(self):
         return self._user_doc_path
-    
+
     @user_doc_path.setter
     def user_doc_path(self, doc_path: str):
         log.info(msg="Saving the PDF's path.")
@@ -210,7 +210,7 @@ class Automator:
                 msg="The finalized payload object is: {0}".format(self.payloads),
             )
 
-    def perform_web_call(self, payload: Payload) -> dict[str, float | str]:
+    def perform_web_call(self, payload: Payload, producer) -> dict[str, float | str]:
         log.info(
             msg="Initializing the web driver.",
         )
@@ -223,7 +223,7 @@ class Automator:
             msg="Getting the response.",
         )
         response = self._get_response(driver)
-        return self._format_response(response, payload)
+        return self._format_response(response, payload, producer)
 
     def _get_response(self, driver: Driver) -> Response:
         response: Response = driver.get_response()
@@ -233,6 +233,7 @@ class Automator:
         self,
         response: Response,
         payload: Payload,
+        producer,
     ) -> dict[str, float | str]:
         form_data = {
             "tax": "",
@@ -246,12 +247,13 @@ class Automator:
                 y = float(x.replace("(", "").replace(")", ""))
                 x = -abs(y)
             form_data[key] = "{:,.2f}".format(float(x))
-        return self.__data_to_dict(form_data, payload)
+        return self.__data_to_dict(form_data, payload, producer)
 
     def __data_to_dict(
         self,
         form_data: dict,
         payload: Payload,
+        producer,
     ) -> dict[str, float | str]:
         other_data = {
             "insured_name": self.carrier_obj.client_name,
@@ -260,6 +262,9 @@ class Automator:
             "policy_fee": "{:,.2f}".format(payload.policy_fee),
             "eff_from": self.carrier_obj.eff_date,
             "eff_to": self.carrier_obj.exp_date,
+            "producing_agent_name": producer.pname,
+            "producing_agent_address1": producer.paddress,
+            "producing_agent_address2": producer.city_st_zip,
         }
         form_data.update(other_data)
         return form_data
@@ -286,6 +291,8 @@ class Automator:
             stamps,
             self.carrier_obj.insert_page_index,
         )
+        for stamp in stamps:
+            stamp.unlink()
         return new_path
 
     def restart_GUI(self):

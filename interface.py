@@ -8,16 +8,18 @@ from exceptions import surplus_lines as exceptions
 from logs.surplus_lines import LOGGING_CONFIG
 from helper import validate_paths
 from model.automation import Automator
+from model.registrations import Producer
 
 logging.config.dictConfig(LOGGING_CONFIG)
 log = logging.getLogger(__name__)
 
 
 class SurplusLinesAutomator:
-    """ TODO: Move self.app into the 'start' method, make it a local variable,  and pass
+    """TODO: Move self.app into the 'start' method, make it a local variable,  and pass
     it into the output dir method....
     NOTE: this actually may not be doable.. relook at it another time.
     """
+
     def __init__(self):
         self.app = Automator()
         self.user_doc_path: Path
@@ -31,7 +33,7 @@ class SurplusLinesAutomator:
         else:
             return None
 
-    def start(self, doc_path: str) -> bool:
+    def start(self, doc_path: str, producer_template: str) -> bool:
         if not self.app.output_dir:
             log.info(
                 msg="The output folder isn't set. This needs to be set before proceeding with the program. ",
@@ -50,10 +52,10 @@ class SurplusLinesAutomator:
                 msg = f"The file provided to the program is not a valid file.\nPath: {doc_path}"
                 log.warning(msg=msg)
                 exceptions.spawn_message(
-                "Warning",
-                msg,
-                0x10 | 0x0,
-            )
+                    "Warning",
+                    msg,
+                    0x10 | 0x0,
+                )
                 return False
             else:
                 self.user_doc_path = _d
@@ -65,12 +67,18 @@ class SurplusLinesAutomator:
                 log.debug(
                     msg="The PDF path is: {0}".format(self.user_doc_path),
                 )
-            if self._automate():
+                producer = Producer(
+                    name=producer_template["name"],
+                    pname=producer_template["pname"],
+                    paddress=producer_template["paddress"],
+                    city_st_zip=producer_template["city_st_zip"],
+                )
+            if self._automate(producer):
                 return True
             else:
                 return False
 
-    def _automate(self):
+    def _automate(self, producer: Producer):
         if not self.app.exited:
             try:
                 self.app.payloads = None
@@ -85,7 +93,7 @@ class SurplusLinesAutomator:
                     log.info(
                         msg="Performing the web call.",
                     )
-                    form_data = self.app.perform_web_call(payload)
+                    form_data = self.app.perform_web_call(payload, producer)
                     log.info(
                         msg="Secured the response and formatted it.",
                     )
@@ -121,4 +129,3 @@ class SurplusLinesAutomator:
                 log.debug(
                     msg="Initializing and showing notification box via ToastNotifier.",
                 )
-                
