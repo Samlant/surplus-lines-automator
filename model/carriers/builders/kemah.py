@@ -8,10 +8,13 @@ from model.carriers.base import CarrierBuilder
 
 log = logging.getLogger(__name__)
 
+def format_block(block: str) -> str:
+    _ = block[4].replace("’", "'")
+    return _.strip().replace("\n", " ")
 
 class KemahBuilder(CarrierBuilder):
     def __init__(self, pdf_path: Path, pages: list[list[str]]) -> None:
-        super().__init__(pdf_path, pages)
+        super().__init__(pdf_path, pages[0])
         self.name = "Kemah"
         self.applicable_states = [
             "FL",
@@ -28,7 +31,6 @@ class KemahBuilder(CarrierBuilder):
                 "Recreational Yacht Insurance Policy",
             ],
         }
-        x = self.pages[0]
         for doc_type, keyword in finder.items():
             log.debug(
                 msg="Running checks to detect if user_doc is of type '{0}'.".format(
@@ -36,7 +38,7 @@ class KemahBuilder(CarrierBuilder):
                 ),
             )
             if doc_type == "policy":
-                for block in x:
+                for block in self.pages:
                     if keyword[0] in block or keyword[1] in block:
                         log.debug(
                             msg="Detected to be a '{0}'. The detected block was: {1}".format(
@@ -46,7 +48,7 @@ class KemahBuilder(CarrierBuilder):
                         self.user_doc_type = doc_type
                         return doc_type
             try:
-                x.index(keyword)
+                self.pages.index(keyword)
             except ValueError:
                 continue
             else:
@@ -76,7 +78,8 @@ class KemahBuilder(CarrierBuilder):
             txt = "Applicant:"
         else:
             txt = "Insured:"
-        for block in self.pages[0]:
+        blocks = self.pages
+        for block in blocks:
             if txt in block:
                 if "Additional" not in block:
                     log.debug(
@@ -92,7 +95,8 @@ class KemahBuilder(CarrierBuilder):
         "This is complete 12/7"
         if self.user_doc_type == "policy" or self.user_doc_type == "binder":
             txt = "Date of Issue:"
-            for block in self.pages[0]:
+            for block in self.pages:
+                
                 if txt in block:
                     x = block.partition(txt)[2].strip()
                     log.debug(
@@ -102,7 +106,8 @@ class KemahBuilder(CarrierBuilder):
                     )
         elif self.user_doc_type == "quote":
             txt = "60 days from"
-            for block in self.pages[0]:
+            for block in self.pages:
+                
                 if txt in block:
                     x = block.partition(txt)[2].strip()
                     log.debug(
@@ -116,7 +121,8 @@ class KemahBuilder(CarrierBuilder):
             or self.user_doc_type == "ap"
         ):
             txt = "Effective Date:"
-            for block in self.pages[0]:
+            for _block in self.pages:
+                block = format_block(_block)
                 if txt in block:
                     x = block.partition(txt)[2]
                     log.debug(
@@ -201,7 +207,8 @@ class KemahBuilder(CarrierBuilder):
                 )
                 self.premiums.append(rates["rp"])
         else:
-            for block in self.pages[0]:
+            for block in self.pages:
+                
                 txt = "Total"
                 if txt in block:
                     log.debug(
@@ -224,7 +231,8 @@ class KemahBuilder(CarrierBuilder):
             self.policy_nums.append("TBA")
         else:
             txt = "Policy Number:"
-            for block in self.pages[0]:
+            for block in self.pages:
+                
                 if txt in block:
                     x = block.partition(txt)[2].lstrip()
                     log.debug(
@@ -245,11 +253,10 @@ class KemahBuilder(CarrierBuilder):
                 txt = "Applicant"
             else:
                 txt = "Insured"
-            blocks = self.pages[0].get_text("blocks", sort=True)
-            for i, block in enumerate(blocks):
-                _ = block[4].replace("’", "'")
-                formatted = _.strip().replace("\n", " ")
-                if txt in formatted:
+            for i, _ in enumerate(self.pages):
+                for _block in _.get_text("blocks", sort=True):
+                    block = format_block(_block)
+                if txt in block and not "Additional" in block:
                     log.debug(
                         msg="Matched block using text: '{0}'. The matched block is: '{1}'.".format(
                             txt, block
@@ -259,16 +266,18 @@ class KemahBuilder(CarrierBuilder):
                         msg="Moving to the next subsequent block.",
                     )
                     i += 1
-                    _ = blocks[i][4].replace("’", "'")
-                    formatted_ = _.strip().replace("\n", " ")
+                    for _i,u in enumerate(self.pages):
+                        if i == _i:
+                            need_block = format_block
+                    _ = _unformatted_blocks[i][4]
                     for state in self.applicable_states:
                         log.info(
                             msg="Comparing client's address against applicable Surplus Lines state(s)...",
                         )
-                        if state in formatted_:
+                        if state in block:
                             log.debug(
                                 msg="Matched block using text: '{0}'. The matched block is: '{1}'.".format(
-                                    state, self.pages[0][i]
+                                    state, block
                                 ),
                             )
                             return True
@@ -278,7 +287,8 @@ class KemahBuilder(CarrierBuilder):
             or self.user_doc_type == "ap"
             or self.user_doc_type == "rp"
         ):
-            for block in self.pages[0]:
+            
+            for block in self.pages:
                 txt = "Surcharge"
                 if txt in block:
                     if "XX" in block:
@@ -293,7 +303,8 @@ class KemahBuilder(CarrierBuilder):
 
     def _get_change_rates(self) -> dict[str, float]:
         "This is complete 12/7"
-        for i, block in enumerate(self.pages[0]):
+        for i, _block in enumerate(self.pages):
+            block = format_block(_block.get_text("blocks", sort=True))
             txt = "Additional Premium"
             if txt in block:
                 log.debug(
@@ -310,7 +321,7 @@ class KemahBuilder(CarrierBuilder):
                     msg="Indexes for all rates: {0}".format(rates),
                 )
         for key, value in rates.items():
-            value = self.__parse_change_rate(self.pages[0][value])
+            value = self.__parse_change_rate(self.pages[value])
             rates[key] = value
         return rates
 
