@@ -248,12 +248,17 @@ class SurplusLinesView:
             self._producer_template,
             *self.producer_templates_list,
         )
+        self.producer_dropdown["menu"].configure(
+        background=self.palette.menuoption_bg_color,
+        foreground=self.palette.menuoption_fg_color,
+        activebackground=self.palette.menuoption_fg_color,
+        activeforeground=self.palette.menuoption_bg_color,
+    )
         self.producer_dropdown.pack(
             fill="x",
             side="left",
             pady=1,
             padx=2,
-            ipadx=100,
         )
         ttk.Button(
             master=middle2,
@@ -345,8 +350,12 @@ class SurplusLinesView:
             ),
             daemon=True,
         )
-        t.start()
-        self.root.withdraw()
+        try:
+            t.start()
+            self.root.withdraw()
+        except:
+            pass
+
 
     def spawn_options_window(self, event=None):
         new_window = Toplevel(master=self.root)

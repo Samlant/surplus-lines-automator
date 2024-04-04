@@ -79,7 +79,7 @@ class NewRegistrations(ttk.LabelFrame):
         ttk.Label(
             self,
             text="City, State & Zip:",
-        ).grid(column=0, row=3, padx=(3, 0))
+        ).grid(column=0, row=4, padx=(3, 0))
         paddress = ttk.Entry(
             master=self,
             name="city_st_zip",
@@ -88,7 +88,7 @@ class NewRegistrations(ttk.LabelFrame):
         )
         paddress.grid(
             column=1,
-            row=3,
+            row=4,
             sticky="ew",
             ipady=5,
             pady=5,

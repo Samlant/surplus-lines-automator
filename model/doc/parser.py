@@ -32,49 +32,51 @@ class DocParser:
         )
 
         if isinstance(self.market, KemahBuilder) and doc_type == "policy":
-            if (
-                "Recreational Yacht Insurance Policy" in pages[0]
-                and "Declarations Page" not in pages[0]
-            ):
-                log.debug(
-                    msg="Dec Page not detected... Locating Dec Page within the Kemah doc...",
-                )
-                doc = fitz.open(pdf_path)
-                start_indx = 15
-                log.debug(
-                    msg="Opened user's doc, starting our search for the Dec Page at page index {0}".format(
-                        start_indx
-                    ),
-                )
-                if self.locate_policy_page(doc, start_indx, len(doc)):
+            for block in pages[0]:
+                if (
+                    "Recreational Yacht Insurance Policy" in block
+                    and "Declarations Page" not in block
+                ):
                     log.debug(
-                        msg="Identified the Dec Page, it's contents are: {0}".format(
-                            self.market.pages[0]
-                        ),
+                        msg="Dec Page not detected... Locating Dec Page within the Kemah doc...",
                     )
-                    pass
-                else:
-                    start_indx = 1
+                    doc = fitz.open(pdf_path)
+                    start_indx = 15
                     log.debug(
-                        msg="Did not identify Dec Page. Starting second search at page index {0}".format(
+                        msg="Opened user's doc, starting our search for the Dec Page at page index {0}".format(
                             start_indx
                         ),
-                        exc_info=1,
                     )
-                    if self.locate_policy_page(doc, start_indx, 14):
+                    end_indx = len(doc) - 1
+                    if self.locate_policy_page(doc, start_indx, end_indx):
                         log.debug(
                             msg="Identified the Dec Page, it's contents are: {0}".format(
                                 self.market.pages[0]
                             ),
-                            exc_info=1,
                         )
                         pass
                     else:
+                        start_indx = 1
                         log.debug(
-                            msg="Failed to locate Dec Page. Raising DocParseError.",
+                            msg="Did not identify Dec Page. Starting second search at page index {0}".format(
+                                start_indx
+                            ),
                             exc_info=1,
                         )
-                        raise exceptions.DocParseError(self.market)
+                        if self.locate_policy_page(doc, start_indx, 14):
+                            log.debug(
+                                msg="Identified the Dec Page, it's contents are: {0}".format(
+                                    self.market.pages[0]
+                                ),
+                                exc_info=1,
+                            )
+                            pass
+                        else:
+                            log.debug(
+                                msg="Failed to locate Dec Page. Raising DocParseError.",
+                                exc_info=1,
+                            )
+                            raise exceptions.DocParseError(self.market)
         else:
             self.market.pages = pages
             log.debug(
@@ -109,7 +111,7 @@ class DocParser:
                 ),
                 exc_info=1,
             )
-            raise exceptions.SurplusLinesNotApplicable(pdf_path)
+            raise exceptions.SurplusLinesNotApplicable(self.market)
         log.info(
             msg="Getting client name.",
         )
@@ -185,7 +187,7 @@ class DocParser:
         while start_indx <= end_indx:
             page = self.get_page_contents(doc[start_indx])
             try:
-                page.index("Declarations Page")
+                page.index("5. Declarations Page")
             except ValueError:
                 start_indx += 1
             else:

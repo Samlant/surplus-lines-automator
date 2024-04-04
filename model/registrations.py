@@ -8,10 +8,13 @@ FORM_PREFIX = "Template_"
 
 @dataclass(kw_only=True)
 class Producer:
-    name: str
+    name: InitVar[str]
     pname: str
     paddress: str
     city_st_zip: str
+    
+    def __post_init__(self, name):
+        self.name = name 
 
     def values(self) -> tuple[str]:
         return (

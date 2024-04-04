@@ -245,8 +245,11 @@ class KemahBuilder(CarrierBuilder):
                 txt = "Applicant"
             else:
                 txt = "Insured"
-            for i, block in enumerate(self.pages[0]):
-                if txt in block:
+            blocks = self.pages[0].get_text("blocks", sort=True)
+            for i, block in enumerate(blocks):
+                _ = block[4].replace("’", "'")
+                formatted = _.strip().replace("\n", " ")
+                if txt in formatted:
                     log.debug(
                         msg="Matched block using text: '{0}'. The matched block is: '{1}'.".format(
                             txt, block
@@ -256,11 +259,13 @@ class KemahBuilder(CarrierBuilder):
                         msg="Moving to the next subsequent block.",
                     )
                     i += 1
+                    _ = blocks[i][4].replace("’", "'")
+                    formatted_ = _.strip().replace("\n", " ")
                     for state in self.applicable_states:
                         log.info(
                             msg="Comparing client's address against applicable Surplus Lines state(s)...",
                         )
-                        if state in self.pages[0][i]:
+                        if state in formatted_:
                             log.debug(
                                 msg="Matched block using text: '{0}'. The matched block is: '{1}'.".format(
                                     state, self.pages[0][i]

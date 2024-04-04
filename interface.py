@@ -78,54 +78,54 @@ class SurplusLinesAutomator:
             else:
                 return False
 
-    def _automate(self, producer: Producer):
+    def _automate(self, producer: Producer) -> bool:
         if not self.app.exited:
-            try:
-                self.app.payloads = None
-                self.app.payloads = []
-                self.app.parse_doc()
-                stamp_num = 1
-                stamp_paths = []
-                for payload in self.app.payloads:
-                    log.debug(
-                        msg="Current payload: {0}".format(payload),
-                    )
-                    log.info(
-                        msg="Performing the web call.",
-                    )
-                    form_data = self.app.perform_web_call(payload, producer)
-                    log.info(
-                        msg="Secured the response and formatted it.",
-                    )
-                    log.debug(
-                        msg="The formatted response is: {0}.".format(form_data),
-                    )
-                    stamp_paths.append(self.app.fill_docs(form_data, stamp_num))
-                    stamp_num += 1
-            except exceptions.DocError:
-                sys.exit(1)
-            except Exception as e:
-                print(str(e))
-                log.error(msg=str(e), stack_info=True)
-                sys.exit(1)
-            else:
-                log.info(
-                    msg="Combining stamps into your document.",
+            
+            self.app.payloads = None
+            self.app.payloads = []
+            self.app.parse_doc()
+            stamp_num = 1
+            stamp_paths = []
+            for payload in self.app.payloads:
+                log.debug(
+                    msg="Current payload: {0}".format(payload),
                 )
-                new_file_path = self.app.combine_docs(stamp_paths)
                 log.info(
-                    msg="Stamps combined. The stamped file location is: {0}.".format(
-                        new_file_path
-                    ),
+                    msg="Performing the web call.",
                 )
-                file_browser_path = os.path.join(os.getenv("WINDIR"), "explorer.exe")
+                form_data = self.app.perform_web_call(payload, producer)
                 log.info(
-                    msg="Opening a file window to show you the new, stamped file.  The file will be highlighted for your convenience.",
+                    msg="Secured the response and formatted it.",
                 )
                 log.debug(
-                    msg="File Explorer path used: {0}.".format(file_browser_path),
+                    msg="The formatted response is: {0}.".format(form_data),
                 )
-                # subprocess.run([file_browser_path, "/select,", new_file_path])
-                log.debug(
-                    msg="Initializing and showing notification box via ToastNotifier.",
-                )
+                stamp_paths.append(self.app.fill_docs(form_data, stamp_num))
+                stamp_num += 1
+        # except exceptions.DocError:
+        #     return False
+        # except Exception as e:
+        #     print(str(e))
+        #     log.error(msg=str(e), stack_info=True)
+        #     return False
+        
+            log.info(
+                msg="Combining stamps into your document.",
+            )
+            new_file_path = self.app.combine_docs(stamp_paths)
+            log.info(
+                msg="Stamps combined. The stamped file location is: {0}.".format(
+                    new_file_path
+                ),
+            )
+            file_browser_path = os.path.join(os.getenv("WINDIR"), "explorer.exe")
+            log.info(
+                msg="Opening a file window to show you the new, stamped file.  The file will be highlighted for your convenience.",
+            )
+            log.debug(
+                msg="File Explorer path used: {0}.".format(file_browser_path),
+            )
+            # subprocess.run([file_browser_path, "/select,", new_file_path])
+            log.debug(
+                msg="Initializing and showing notification box via ToastNotifier.",
+            )

@@ -67,14 +67,17 @@ def _assign_default_static_colors(style_object, palette):
         background=palette.base_bg_color,
         foreground=palette.base_fg_color,
     )
-    # s.configure(
-    #     "TMenubutton",
-    #     background=palette.menuoption_bg_color,
-    #     foreground=palette.menuoption_fg_color,
-    #     highlightbackground=palette.menuoption_bg_color,
-    #     activebackground="red",
-    #     font=("helvetica", 12, "normal"),
-    # )
+    s.configure(
+        "TMenubutton",
+        background=palette.menuoption_bg_color,
+        foreground=palette.menuoption_fg_color,
+        activeforeground=palette.btn_fg,
+        highlightbackground=palette.menuoption_bg_color,
+        activebackground=palette.btn_active_bg,
+        highlightcolor="#4c4f3f",
+        font=("helvetica", 12, "normal"),
+        width=35,
+    )
     s.configure(
         "Treeview",
         background=palette.alt_bg_color,

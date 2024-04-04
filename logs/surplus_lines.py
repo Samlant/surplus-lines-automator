@@ -30,42 +30,42 @@ LOGGING_CONFIG = {
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.automation": {
+        "model.automation": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.carriers.base": {
+        "model.carriers.base": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.carriers.builders.concept": {
+        "model.carriers.builders.concept": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.carriers.builders.kemah": {
+        "model.carriers.builders.kemah": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.carriers.builders.yachtinsure": {
+        "model.carriers.builders.yachtinsure": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.doc.filler": {
+        "model.doc.filler": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.doc.parser": {
+        "model.doc.parser": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,
         },
-        "QuickDraw.models.surplus_lines.web.scraper": {
+        "model.web.scraper": {
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": True,

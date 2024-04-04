@@ -121,7 +121,6 @@ class Automator:
                 msg="{0}".format(str(e)),
                 exc_info=1,
             )
-            self.root.destroy()
             raise exceptions.DocError(self.user_doc_path) from e
         try:
             carrier_builder, trans_type = dp.build_market_class(self.user_doc_path)
@@ -144,7 +143,7 @@ class Automator:
                     msg="User decided to cancel instead of trying again. Exiting.",
                     exc_info=1,
                 )
-                raise exceptions.DocError(self.user_doc_path) from e
+                raise exceptions.DocParseError(dp.market) from e
         except exceptions.UnsupportedDocType as e:
             output = exceptions.spawn_message("Error", str(e), 5)
             if output == 4:
@@ -161,8 +160,7 @@ class Automator:
                     msg="User decided to cancel instead of trying again. Exiting.",
                     exc_info=1,
                 )
-                self.root.destroy()
-                raise exceptions.DocError(self.user_doc_path) from e
+                raise exceptions.UnsupportedDocType(dp.market) from e
         except exceptions.UnknownDocType as e:
             exceptions.spawn_message("Error", str(e), 0x10 | 0x0)
             # btn = OK
@@ -171,8 +169,7 @@ class Automator:
                 msg="{0}".format(str(e)),
                 exc_info=1,
             )
-            self.root.destroy()
-            raise exceptions.DocError(self.user_doc_path) from e
+            raise exceptions.UnknownDocType(dp.market) from e
         except exceptions.SurplusLinesNotApplicable as e:
             exceptions.spawn_message("Error", str(e), 0x10 | 0x0)
             # btn = OK
@@ -181,8 +178,7 @@ class Automator:
                 msg="{0}".format(str(e)),
                 exc_info=1,
             )
-            self.root.destroy()
-            raise exceptions.DocError(self.user_doc_path) from e
+            raise exceptions.SurplusLinesNotApplicable(dp.market) from e
         else:
             log.debug(
                 msg="Starting to build carrier object using the CarrierBuilder.",

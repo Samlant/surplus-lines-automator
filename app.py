@@ -15,6 +15,7 @@ from model.registrations import (
 from themes.palettes import BlueRose
 from view.drag_n_drop import SurplusLinesView as View
 from view.tray_icon import TrayIcon
+from exceptions import surplus_lines as exceptions
 
 
 palette = BlueRose()
@@ -41,11 +42,20 @@ class Presenter:
     def process_SL_doc(self, event, producer_template: str):  # used by view
         doc_path = event.data.strip("{}")
         config = open_config()
-        producer = config.get_section(name=producer_template).to_dict()
+        producer_values = config.get_section(name=producer_template).to_dict()
+        producer_values["name"] = producer_template
         try:
-            interface.start(doc_path, producer)
+            interface.start(doc_path, producer_values)
         except OutputDirNotSet:
             self.show_window()
+        except Exception as e:
+            # log.error(msg=str(e), stack_info=True)
+            toaster = ToastNotifier()
+            toaster.show_toast(
+                "FAILED:",
+                str(e),
+                duration=5,
+            )
         else:
             toaster = ToastNotifier()
             toaster.show_toast(
