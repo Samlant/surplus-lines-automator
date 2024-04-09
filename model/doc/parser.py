@@ -24,7 +24,7 @@ class DocParser:
         )
         self.market = self.identify_mrkt(pages, pdf_path)
         log.debug(
-            msg="Identified the market as: {0}".format(self.market.name),
+            msg="Identified the market as: {0}, and assigned the pages to the CarrierBuilder class.".format(self.market.name),
         )
         doc_type = self.market.get_user_doc_type()
         log.debug(
@@ -38,7 +38,7 @@ class DocParser:
                     and "Declarations Page" not in block
                 ):
                     log.debug(
-                        msg="Dec Page not detected... Locating Dec Page within the Kemah doc...",
+                        msg="Dec Page not detected on first page... Locating Dec Page within the rest of the Kemah doc...",
                     )
                     doc = fitz.open(pdf_path)
                     start_indx = 15
@@ -51,10 +51,9 @@ class DocParser:
                     if self.locate_policy_page(doc, start_indx, end_indx):
                         log.debug(
                             msg="Identified the Dec Page, it's contents are: {0}".format(
-                                self.market.pages[0]
+                                self.market.pages
                             ),
                         )
-                        pass
                     else:
                         start_indx = 1
                         log.debug(
@@ -66,11 +65,10 @@ class DocParser:
                         if self.locate_policy_page(doc, start_indx, 14):
                             log.debug(
                                 msg="Identified the Dec Page, it's contents are: {0}".format(
-                                    self.market.pages[0]
+                                    self.market.pages
                                 ),
                                 exc_info=1,
                             )
-                            pass
                         else:
                             log.debug(
                                 msg="Failed to locate Dec Page. Raising DocParseError.",
@@ -78,9 +76,8 @@ class DocParser:
                             )
                             raise exceptions.DocParseError(self.market)
         else:
-            self.market.pages = pages
             log.debug(
-                msg="Assigned the pages to the market.",
+                msg="Assigned the page(s) to the market.",
                 exc_info=1,
             )
 
@@ -89,7 +86,7 @@ class DocParser:
             if "Concept Special Risks" in block:
                 return ConceptBuilder(pdf_path, pages)
             elif "Sutton Specialty Insurance Company" in block:
-                return KemahBuilder(pdf_path, pages)
+                return KemahBuilder(pdf_path, pages[0])
             elif "yachtinsure" in block.lower():
                 return YachtinsureBuilder(pdf_path, pages)
         log.debug(
@@ -123,9 +120,7 @@ class DocParser:
             date_obj = self.market.get_eff_date()
         except TypeError:
             log.debug(
-                msg="Returned date is not a Datetime obj. It's a: {0}, and it's value is: {1}".format(
-                    type(date_obj), date_obj
-                ),
+                msg="Returned date is not a Datetime obj after trying to get Eff date.",
                 exc_info=1,
             )
             raise TypeError
@@ -143,7 +138,7 @@ class DocParser:
         self.market.check_for_multiple_stamps()
         log.info(
             msg="Finished checking for multiple stamps: {0}".format(
-                self.market.pages[0]
+                self.market.pages
             ),
         )
         self.market.get_policy_nums()
@@ -184,16 +179,17 @@ class DocParser:
         return pages
 
     def locate_policy_page(self, doc, start_indx: int, end_indx: int) -> bool:
-        while start_indx <= end_indx:
-            page = self.get_page_contents(doc[start_indx])
+        _index = start_indx
+        while _index <= end_indx:
+            page = self.get_page_contents(doc[_index])
             try:
                 page.index("5. Declarations Page")
             except ValueError:
-                start_indx += 1
+                _index += 1
             else:
-                self.market.insert_page_index = start_indx + 1
-                self.market.pages = []
-                self.market.pages.append(doc[start_indx])
+                self.market.insert_page_index = _index + 1
+                # self.market.pages.append(doc[_index])
+                self.market.pages = page
                 log.debug(
                     msg="Identified the dec page and assigned the insert_page_index as {0}.  Added Dec Page to the market's pages attr.".format(
                         self.market.insert_page_index
