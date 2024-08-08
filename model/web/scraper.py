@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 
 log = logging.getLogger(__name__)
 
@@ -148,14 +149,14 @@ class Driver:
             expected_conditions.element_to_be_clickable((By.ID, "btnSubmit"))
         )
         element = self.driver.find_element(value="btnSubmit")
-        self.driver.execute_script(
-            "arguments[0].scrollIntoView(true);",
-            element,
-        )
-        # actions = ActionChains(self.driver)
-        # # self.scroll_shim(self.driver, element)
-        # actions.scroll_to_element(element)
-        # actions.perform()
+        # self.driver.execute_script(
+        #     "arguments[0].scrollIntoView(true);",
+        #     element,
+        # )
+        actions = ActionChains(self.driver)
+        self.scroll_shim(self.driver, element)
+        actions.move_to_element(element)
+        actions.perform()
         try:
             element.click()
         except:

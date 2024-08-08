@@ -55,11 +55,11 @@ class KemahBuilder(CarrierBuilder):
                 )
                 if doc_type == "policy change":
                     rates = self._get_change_rates()
-                    if 0 not in rates["ap"]:
+                    if rates["ap"] != 0:
                         self.user_doc_type = "ap"
                     elif "Policy Cancellation" in self.pages[0]:
                         self.user_doc_type = "cancel"
-                    elif 0 not in rates["rp"]:
+                    elif rates["rp"] != 0:
                         self.user_doc_type = "rp"
                     else:
                         raise exceptions.UnknownDocType(self)
@@ -160,9 +160,9 @@ class KemahBuilder(CarrierBuilder):
         ):
             rates = self._get_change_rates()
             if (
-                "XX" not in rates["ap"]
+                rates["ap"] != "XX"
                 and rates["ap"] != 0
-                and "XX" not in rates["taxes"]
+                and rates["taxes"] != "XX"
                 and rates["taxes"] != 0
             ):
                 log.debug(
@@ -172,7 +172,7 @@ class KemahBuilder(CarrierBuilder):
                 )
                 x = rates["ap"] + rates["taxes"]
                 self.premiums.append(x)
-            elif "XX" not in rates["ap"] and rates["ap"] != 0 and rates["taxes"] == 0:
+            elif rates["ap"] != "XX" and rates["ap"] != 0 and rates["taxes"] == 0:
                 log.debug(
                     msg="Detected premium as AP without taxes. AP: {0}".format(
                         rates["ap"]
@@ -180,9 +180,9 @@ class KemahBuilder(CarrierBuilder):
                 )
                 self.premiums.append(rates["ap"])
             elif (
-                "XX" not in rates["rp"]
+                rates["rp"] != "XX" 
                 and rates["rp"] != 0
-                and "XX" not in rates["taxes"]
+                and rates["taxes"] != "XX"
                 and rates["taxes"] != 0
             ):
                 log.debug(
@@ -336,8 +336,8 @@ class KemahBuilder(CarrierBuilder):
             )
         if "-" in string:
             log.debug(
-                msg="Detected to be a negative number because a minus sign (-) is present in string: '{1}'. Returning {2}".format(
-                    "-", string, -num
+                msg="Detected to be a negative number because a minus sign (-) is present in string: '{0}'. Returning {1}".format(
+                    string, -num
                 ),
             )
             return -num

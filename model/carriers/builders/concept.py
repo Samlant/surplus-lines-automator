@@ -63,10 +63,12 @@ class ConceptBuilder(CarrierBuilder):
                                     ),
                                 )
                                 self.user_doc_type = doc_type
+                                self.insert_page_index = self.find_insert_index()
                                 return doc_type
                 else:
                     self.user_doc_type = doc_type
-                    self.insert_page_index = 2
+                    self.insert_page_index = self.find_insert_index()
+                    # self.insert_page_index = 2 # This is an old, static method...
                     return doc_type
         log.debug(
             msg="Did not match any keywords.  Initial finder dict: {0},  second endorsement finder dict: {1}, and the page's contents are: {2}".format(
@@ -75,6 +77,15 @@ class ConceptBuilder(CarrierBuilder):
             exc_info=1,
         )
         raise exceptions.UnknownDocType(self)
+
+    def find_insert_index(self) -> int:
+        if self.user_doc_type == "ap" or self.user_doc_type == "rp" or self.user_doc_type == "cancel":
+            return len(self.pages)
+        else:
+            for i, block in enumerate(self.pages[2]):
+                if "1. Definitions" in block:
+                    return 2
+            return 3
 
     def get_client_name(self) -> bool:
         "This is complete 12/7"
@@ -113,6 +124,7 @@ class ConceptBuilder(CarrierBuilder):
 
     def get_premiums(self) -> bool:
         "This is correct 12/7"
+        carrier_fee = 50
         if self.multiple_stamps_flag:
             for i, block in enumerate(self.pages[1]):
                 if "Insurance Provider" in block:
@@ -120,24 +132,28 @@ class ConceptBuilder(CarrierBuilder):
                     if (
                         "Accelerant Specialty" in self.pages[1][i]
                         and "Texas Insurance" in self.pages[1][i]
+                        and "Hadron" in self.pages[1][i]
+                        and "Palomar" in self.pages[1][i]
                         and "Lloyd's Syndicates" in self.pages[1][i]
                     ):
-                        x = self.pages[1][i].partition(")")
-                        premium1_str = x[0].rpartition("US$")[2].strip().replace(",", "")
-                        premium1 = float(premium1_str)
-                        premium1 += 35
-                        premium2 = (
-                            x[2]
-                            .partition("premium US$")[2]
-                            .partition(")")[0]
-                            .strip()
-                            .replace(",", "")
-                        )
-
-                        for premium in [premium1, premium2]:
-                            self.premiums.append(
-                                float(premium),
+                        if "except" in self.pages[1][i]:
+                            x: tuple[str,str,str] = self.pages[1][i].partition("except")
+                            premium1_str = x[0].rpartition("US$")[2].strip().replace(",", "")
+                            premium1 = float(premium1_str)
+                            premium1 += carrier_fee
+                            premium2 = (
+                                x[2]
+                                .rpartition("premium US$")[2]
+                                .strip()
+                                .replace(",", "")
                             )
+
+                            for premium in [premium1, premium2]:
+                                self.premiums.append(
+                                    float(premium),
+                                )
+                        else:
+                            pass
                     else:
                         raise exceptions.DocParseError(self)
         else:
@@ -152,7 +168,7 @@ class ConceptBuilder(CarrierBuilder):
                 x = self.pages[0][i].partition("US$")[2].partition("cancelling")[0]
                 premium = x.strip().replace(",", "")
                 premium = float(premium)
-                premium += 35
+                premium += carrier_fee
             elif (
                 self.user_doc_type == "cancel"
                 or self.user_doc_type == "rp"
@@ -179,9 +195,10 @@ class ConceptBuilder(CarrierBuilder):
         if self.multiple_stamps_flag:
             policy1 = self.pages[0][i].strip()
             self.policy_nums.append(policy1)
-            for block in self.pages[1]:
-                if "per cover note" in block:
-                    x = block.partition("per cover note")[2]
+            for i, block in enumerate(self.pages[1]):
+                if "Insurance Provider" in block:
+                    i += 1
+                    x = self.pages[1][i].partition("per UMR")[2]
                     policy2 = x.partition(")")[0].partition("(")[0].strip()
                     self.policy_nums.append(policy2)
         else:
@@ -202,7 +219,7 @@ class ConceptBuilder(CarrierBuilder):
                         ),
                     )
                     i += 1
-                    if "except" in page[i]:
+                    if "except" in page[i] or "US$" in page[i].partition("US$")[2]:
                         log.debug(
                             msg="Found 'except' keyword in block, block's contents are: {0}".format(
                                 block

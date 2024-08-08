@@ -85,7 +85,9 @@ class DocParser:
         for block in pages[0]:
             if "Concept Special Risks" in block:
                 return ConceptBuilder(pdf_path, pages)
-            elif "Sutton Specialty Insurance Company" in block:
+            elif "Company:" in block and "Sutton" in block:
+                return KemahBuilder(pdf_path, pages[0])
+            elif "KMYSS" in block:
                 return KemahBuilder(pdf_path, pages[0])
             elif "yachtinsure" in block.lower():
                 return YachtinsureBuilder(pdf_path, pages)
