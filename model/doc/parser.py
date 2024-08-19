@@ -103,14 +103,28 @@ class DocParser:
         log.info(
             msg="Checking to ensure a stamp is required for this document.",
         )
-        if not self.market.check_if_doc_needs_stamp():
-            log.debug(
-                msg="User's doc does not need stamping. Path to file: {0}".format(
-                    pdf_path
-                ),
+        try:
+            if not self.market.check_if_doc_needs_stamp():
+                log.debug(
+                    msg="User's doc does not need stamping. Asking user for override. Path to file: {0}".format(
+                        pdf_path
+                    ),
+                    exc_info=1,
+                )
+                raise exceptions.SurplusLinesNotApplicable(self.market)
+        except exceptions.SurplusLinesNotApplicable as e:
+           
+            result = exceptions.spawn_message("Error", str(e), 0x10 | 0x05)
+            # btn = Retry Cancel
+            # Allow user to override error and continue, or cancel.
+            log.warning(
+                msg="{0}".format(str(e)),
                 exc_info=1,
             )
-            raise exceptions.SurplusLinesNotApplicable(self.market)
+            if result == 4:
+                log.info(msg="User override.  State was not listed as an approved stampable state.")
+            else:
+                raise exceptions.SurplusLinesNotApplicable(self.market)
         log.info(
             msg="Getting client name.",
         )

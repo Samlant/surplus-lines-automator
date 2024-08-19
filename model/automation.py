@@ -170,15 +170,17 @@ class Automator:
                 exc_info=1,
             )
             raise exceptions.UnknownDocType(dp.market) from e
-        except exceptions.SurplusLinesNotApplicable as e:
-            exceptions.spawn_message("Error", str(e), 0x10 | 0x0)
-            # btn = OK
-            # exit SL window and terminate thread
-            log.warning(
-                msg="{0}".format(str(e)),
-                exc_info=1,
-            )
-            raise exceptions.SurplusLinesNotApplicable(dp.market) from e
+        # we moved below exception onto a lower level to handle with a retry
+        # attempt if user confirms okay to override error.
+        # except exceptions.SurplusLinesNotApplicable as e:
+        #     exceptions.spawn_message("Error", str(e), 0x10 | 0x0)
+        #     # btn = OK
+        #     # exit SL window and terminate thread
+        #     log.warning(
+        #         msg="{0}".format(str(e)),
+        #         exc_info=1,
+        #     )
+        #     raise exceptions.SurplusLinesNotApplicable(dp.market) from e
         else:
             log.debug(
                 msg="Starting to build carrier object using the CarrierBuilder.",
