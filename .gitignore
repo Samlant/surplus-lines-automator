@@ -178,5 +178,6 @@ cython_debug/
 .vs/
 .vscode/
 
-# Custom Powershell scripts
+# Custom Powershell & CMD scripts
 *.ps1
+*.bat
