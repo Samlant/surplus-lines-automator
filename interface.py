@@ -47,7 +47,7 @@ class SurplusLinesAutomator:
             raise exceptions.OutputDirNotSet()
         else:
             try:
-                _d: Path = validate_paths(pathnames=doc_path)
+                self.user_doc_path: Path = validate_paths(pathnames=doc_path)
             except OSError as e:
                 msg = f"The file provided to the program is not a valid file.\nPath: {doc_path}"
                 log.warning(msg=msg)
@@ -58,7 +58,7 @@ class SurplusLinesAutomator:
                 )
                 return False
             else:
-                self.user_doc_path = _d
+                
                 self.app.user_doc_path = self.user_doc_path
                 self.app.exited = False
                 log.info(
@@ -125,7 +125,7 @@ class SurplusLinesAutomator:
             log.debug(
                 msg="File Explorer path used: {0}.".format(file_browser_path),
             )
-            # subprocess.run([file_browser_path, "/select,", new_file_path])
+            subprocess.run([file_browser_path, "/select,", new_file_path])
             log.debug(
                 msg="Initializing and showing notification box via ToastNotifier.",
             )
