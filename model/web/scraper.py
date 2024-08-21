@@ -3,6 +3,7 @@ from typing import Protocol
 import logging
 
 from selenium import webdriver
+from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.support import expected_conditions
@@ -57,13 +58,6 @@ class Driver:
         self.driver: webdriver.Edge = None
         # self.service = Service(executable_path=browser_driver)
 
-    def scroll_shim(self, passed_in_driver, object):
-        x = object.location["x"]
-        y = object.location["y"]
-        scroll_by_coord = "window.scrollTo(%s,%s);" % (x, y)
-        scroll_nav_out_of_way = "window.scrollBy(0, -120);"
-        passed_in_driver.execute_script(scroll_by_coord)
-        passed_in_driver.execute_script(scroll_nav_out_of_way)
 
     def send_call(self, payload: Payload) -> None:
         log.info(
@@ -145,30 +139,93 @@ class Driver:
             msg="Inserted data into fields, scrolling to submit btn.",
         )
         # btn
-        WebDriverWait(self.driver, 10).until(
-            expected_conditions.element_to_be_clickable((By.ID, "btnSubmit"))
-        )
-        element = self.driver.find_element(value="btnSubmit")
-        # self.driver.execute_script(
-        #     "arguments[0].scrollIntoView(true);",
-        #     element,
+        element = self.wait_for_element(self.driver, By.ID, "btnSubmit",)
+        self.scroll_and_click(self.driver, element)
+    
+
+        ##############################
+        # Refactored below code into separate functions
+        ##############################
+        # WebDriverWait(self.driver, 10).until(
+        #     expected_conditions.element_to_be_clickable((By.ID, "btnSubmit"))
         # )
-        actions = ActionChains(self.driver)
-        self.scroll_shim(self.driver, element)
-        actions.move_to_element(element)
-        actions.perform()
-        try:
-            element.click()
-        except:
-            log.info(
-                msg="Scrolling failed/incomplete, trying to scroll and click once more.",
-            )
-            self.driver.execute_script(
-                "arguments[0].scrollIntoView(true);",
-                element,
-            )
-            element.click()
+        # element = self.driver.find_element(value="btnSubmit")
+        # # self.driver.execute_script(
+        # #     "arguments[0].scrollIntoView(true);",
+        # #     element,
+        # # )
+        # actions = ActionChains(self.driver)
+        # self.scroll_shim(self.driver, element)
+        # actions.move_to_element(element)
+        # actions.perform()
+        # try:
+        #     element.click()
+        # except ElementClickInterceptedException:
+        #     log.info(
+        #         msg="Scrolling failed/incomplete, trying to scroll and click once more.",
+        #     )
+        #     try:
+        #         self.driver.execute_script(
+        #             "arguments[0].scrollIntoView(true);",
+        #             element,
+        #         )
+        #         element.click()
+        #     except ElementClickInterceptedException:
+        #         try:
+        #             # Scroll to the top of the page
+        #             self.driver.execute_script("window.scrollTo(0, 0);")
+        #             # Scroll down to the button
+        #             self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+        #             element.click()
+        #         except ElementClickInterceptedException:
+
         log.debug(msg="Scrolled into view of submit btn and clicked it.")
+
+    def wait_for_element(self, driver, by, value, timeout=10):
+        return WebDriverWait(driver, timeout).until(
+            expected_conditions.element_to_be_clickable((by, value))
+        )
+
+    def scroll_and_click(self, driver, element):
+        if not self.try_scroll_shim(driver, element):
+            if not self.try_scroll_js(driver, element):
+                if not self.try_scroll_js(driver, element, position="top"):
+                    if not self.try_scroll_js(driver, element, position="bottom"):
+                        log.error("All attempts to scroll and click the button failed.")
+
+    def try_scroll_shim(self, driver, element, actions=None):
+        try:
+            if actions is None:
+                actions = ActionChains(driver)
+            self.scroll_shim(driver, element)
+            actions.move_to_element(element)
+            actions.perform()
+            element.click()
+            return True
+        except ElementClickInterceptedException:
+            log.info("Scrolling failed/incomplete, trying next method.")
+            return False
+        
+    def try_scroll_js(self, driver, element, position=None):
+        try:
+            if position == "top":
+                driver.execute_script("window.scrollTo(0, 0);")
+            elif position == "bottom":
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            element.click()
+            return True
+        except ElementClickInterceptedException:
+            log.info("JavaScript scrolling failed, trying next method.")
+            return False
+
+    def scroll_shim(self, passed_in_driver, _object):
+        x = _object.location["x"]
+        y = _object.location["y"]
+        scroll_by_coord = f"window.scrollTo({x},{y});"
+        scroll_nav_out_of_way = "window.scrollBy(0, -120);"
+        passed_in_driver.execute_script(scroll_by_coord)
+        passed_in_driver.execute_script(scroll_nav_out_of_way)
 
     # Tax
     def get_response(self) -> Response:
