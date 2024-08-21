@@ -90,8 +90,7 @@ profile_default/
 ipython_config.py
 
 # Configurations files
-*.ini
-**/*.ini
+configurations.ini
 *.jsonc
 **/*.jsonc
 
