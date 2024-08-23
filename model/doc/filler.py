@@ -2,7 +2,7 @@ import fitz
 from pathlib import Path
 import logging
 
-from helper import FSL_DOC_PATH
+from helper import FSL_DOC_PATH, resource_path
 
 
 log = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class DocFiller:
                 pix = page.get_pixmap(dpi=150)  # set desired resolution
                 outpage.insert_image(page.rect, pixmap=pix)
             stamp_file_name = f"temp_stamp{stamp_num}.pdf"
-            stamp_path = Path.cwd() / stamp_file_name
+            stamp_path = resource_path / stamp_file_name
             log.debug(
                 msg="The new temp stamp name is: {0}, and the file location is: {1}".format(
                     stamp_file_name, stamp_path
