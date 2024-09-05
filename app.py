@@ -54,7 +54,7 @@ class Presenter:
             toaster.show_toast(
                 "FAILED:",
                 str(e),
-                duration=5,
+                duration=10,
             )
         else:
             toaster = ToastNotifier()

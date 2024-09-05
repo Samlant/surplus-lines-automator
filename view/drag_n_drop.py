@@ -146,7 +146,8 @@ class SurplusLinesView:
         self.style = create_style(self.root, self.palette)
         self._assign_window_traits()
         self.producer_templates_list = template_values
-        self.producer_template = "Choose a template"
+        # self.producer_template = "Choose a template"
+        self.producer_template = self.producer_templates_list[1]
         self._create_widgets()
         if output_dir:
             self.output_dir = output_dir
@@ -248,6 +249,7 @@ class SurplusLinesView:
             self._producer_template,
             *self.producer_templates_list,
         )
+        self.producer_template = self.producer_templates_list[1]
         self.producer_dropdown["menu"].configure(
         background=self.palette.menuoption_bg_color,
         foreground=self.palette.menuoption_fg_color,

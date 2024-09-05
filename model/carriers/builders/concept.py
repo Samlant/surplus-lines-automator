@@ -205,26 +205,33 @@ class ConceptBuilder(CarrierBuilder):
             self.policy_nums.append(self.pages[0][i].strip())
         return True
 
-    def check_for_multiple_stamps(self) -> bool:
-        """Checks if multiple stamps are needed and sets the
-        multiple_Stamps_flag to True is so.
+    # --------------------------------------------------------
+    # We commented out this function because we no longer
+    # need to publish two separate stamps for excess liability
+    # policies.  This class will instead inherit the function
+    # from its parent class.
+    # If this changes in teh future, uncomment this function.
+    # --------------------------------------------------------
+    # def check_for_multiple_stamps(self) -> bool:
+    #     """Checks if multiple stamps are needed and sets the
+    #     multiple_Stamps_flag to True is so.
 
-        This is corect 12/7"""
-        for page in self.pages:
-            for i, block in enumerate(page):
-                if "Insurance Providers:" in block:
-                    log.debug(
-                        msg="Detected 'Insurance Providers' in text block, now checking for the 'except' keyword. block contents: {0}".format(
-                            block
-                        ),
-                    )
-                    i += 1
-                    if "except" in page[i] or "US$" in page[i].partition("US$")[2]:
-                        log.debug(
-                            msg="Found 'except' keyword in block, block's contents are: {0}".format(
-                                block
-                            ),
-                        )
-                        self.multiple_stamps_flag = True
-                        return True
-        return True
+    #     This is corect 12/7"""
+    #     for page in self.pages:
+    #         for i, block in enumerate(page):
+    #             if "Insurance Providers:" in block:
+    #                 log.debug(
+    #                     msg="Detected 'Insurance Providers' in text block, now checking for the 'except' keyword. block contents: {0}".format(
+    #                         block
+    #                     ),
+    #                 )
+    #                 i += 1
+    #                 if "except" in page[i] or "US$" in page[i].partition("US$")[2]:
+    #                     log.debug(
+    #                         msg="Found 'except' keyword in block, block's contents are: {0}".format(
+    #                             block
+    #                         ),
+    #                     )
+    #                     self.multiple_stamps_flag = True
+    #                     return True
+    #     return True
