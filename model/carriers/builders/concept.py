@@ -124,6 +124,7 @@ class ConceptBuilder(CarrierBuilder):
 
     def get_premiums(self) -> bool:
         "This is correct 12/7"
+        # This carrier_fee gets replaced later with a value parsed from the PDF.
         carrier_fee = 50
         if self.multiple_stamps_flag:
             for i, block in enumerate(self.pages[1]):
@@ -165,9 +166,11 @@ class ConceptBuilder(CarrierBuilder):
             ):
                 i = self.pages[0].index("Total Premium:")
                 i += 1
-                x = self.pages[0][i].partition("US$")[2].partition("cancelling")[0]
+                _x = self.pages[0][i].partition("US$")[2].partition("cancelling")
+                x = _x[0]
                 premium = x.strip().replace(",", "")
-                premium = float(premium)
+                carrier_fee = _x[2].partition("Certificate")[0].partition("US$")[2].strip().replace(",", "")
+                premium, carrier_fee = float(premium), float(carrier_fee)
                 premium += carrier_fee
             elif (
                 self.user_doc_type == "cancel"
