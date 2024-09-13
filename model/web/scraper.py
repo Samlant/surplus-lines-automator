@@ -54,6 +54,7 @@ class Response:
 class Driver:
     def __init__(self) -> None:
         self.options = Options()
+        self.options.add_argument("--headless")
         self.options.page_load_strategy = "normal"
         self.driver: webdriver.Edge = None
         # self.service = Service(executable_path=browser_driver)
